@@ -1,0 +1,511 @@
+{
+  "info": {
+    "name": "CineRating - GitHub OAuth + REST",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection para testar a API CineRating. Primeiro execute 'Iniciar OAuth GitHub', abra o authUrl no browser, autorize a app, copie o token devolvido pelo callback e coloque-o na variavel token da collection."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "createdGeneroId",
+      "value": ""
+    },
+    {
+      "key": "createdFilmeId",
+      "value": ""
+    },
+    {
+      "key": "createdAvaliacaoId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Estado da API",
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Resposta JSON com mensagem', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('mensagem');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      }
+    },
+    {
+      "name": "Iniciar OAuth GitHub",
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Devolve authUrl ou redirecionamento', function () {",
+              "  pm.expect([200, 302]).to.include(pm.response.code);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('authUrl');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/github"
+      }
+    },
+    {
+      "name": "Utilizador autenticado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Contem utilizador autenticado', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('utilizador');",
+              "  pm.expect(json.utilizador).to.have.property('id_utilizador');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/me"
+      }
+    },
+    {
+      "name": "Listar generos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Resposta e array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/generos"
+      }
+    },
+    {
+      "name": "Criar genero",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.expect(json).to.have.property('genero');",
+              "pm.collectionVariables.set('createdGeneroId', json.genero.id_genero);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome_genero\": \"Genero Teste {{$timestamp}}\"\n}"
+        },
+        "url": "{{baseUrl}}/generos"
+      }
+    },
+    {
+      "name": "Obter genero criado",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/generos/{{createdGeneroId}}"
+      }
+    },
+    {
+      "name": "Atualizar genero criado",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome_genero\": \"Genero Teste Atualizado {{$timestamp}}\"\n}"
+        },
+        "url": "{{baseUrl}}/generos/{{createdGeneroId}}"
+      }
+    },
+    {
+      "name": "Atualizar parcialmente genero criado",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome_genero\": \"Genero Teste Patch {{$timestamp}}\"\n}"
+        },
+        "url": "{{baseUrl}}/generos/{{createdGeneroId}}"
+      }
+    },
+    {
+      "name": "Listar filmes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Resposta e array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/filmes"
+      }
+    },
+    {
+      "name": "Criar filme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.expect(json).to.have.property('filme');",
+              "pm.collectionVariables.set('createdFilmeId', json.filme.id_filme);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Filme Teste {{$timestamp}}\",\n  \"ano_lancamento\": 2026,\n  \"duracao_minutos\": 110,\n  \"sinopse\": \"Filme criado pela Collection Postman.\",\n  \"id_genero\": {{createdGeneroId}}\n}"
+        },
+        "url": "{{baseUrl}}/filmes"
+      }
+    },
+    {
+      "name": "Obter filme criado",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/filmes/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Atualizar filme criado",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Filme Teste Atualizado {{$timestamp}}\",\n  \"ano_lancamento\": 2026,\n  \"duracao_minutos\": 115,\n  \"sinopse\": \"Filme atualizado pela Collection Postman.\",\n  \"id_genero\": {{createdGeneroId}}\n}"
+        },
+        "url": "{{baseUrl}}/filmes/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Atualizar parcialmente filme criado",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duracao_minutos\": 118\n}"
+        },
+        "url": "{{baseUrl}}/filmes/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Criar avaliacao propria",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.expect(json).to.have.property('avaliacao');",
+              "pm.collectionVariables.set('createdAvaliacaoId', json.avaliacao.id_avaliacao);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_filme\": {{createdFilmeId}},\n  \"nota\": 18,\n  \"comentario\": \"Excelente filme.\"\n}"
+        },
+        "url": "{{baseUrl}}/avaliacoes"
+      }
+    },
+    {
+      "name": "Listar as minhas avaliacoes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Resposta e array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/avaliacoes"
+      }
+    },
+    {
+      "name": "Obter avaliacao propria",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/avaliacoes/{{createdAvaliacaoId}}"
+      }
+    },
+    {
+      "name": "Atualizar avaliacao propria",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nota\": 19,\n  \"comentario\": \"Alteracao de teste.\"\n}"
+        },
+        "url": "{{baseUrl}}/avaliacoes/{{createdAvaliacaoId}}"
+      }
+    },
+    {
+      "name": "Atualizar parcialmente avaliacao propria",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nota\": 17\n}"
+        },
+        "url": "{{baseUrl}}/avaliacoes/{{createdAvaliacaoId}}"
+      }
+    },
+    {
+      "name": "Adicionar a minha watchlist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+              "pm.expect(pm.response.json()).to.have.property('item');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_filme\": {{createdFilmeId}}\n}"
+        },
+        "url": "{{baseUrl}}/watchlist"
+      }
+    },
+    {
+      "name": "Listar a minha watchlist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Resposta e array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/watchlist"
+      }
+    },
+    {
+      "name": "Obter item da minha watchlist",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/watchlist/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Atualizar item da minha watchlist",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"visto\": true\n}"
+        },
+        "url": "{{baseUrl}}/watchlist/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Atualizar parcialmente item da minha watchlist",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"visto\": false\n}"
+        },
+        "url": "{{baseUrl}}/watchlist/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Remover item da minha watchlist",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/watchlist/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Apagar avaliacao propria",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/avaliacoes/{{createdAvaliacaoId}}"
+      }
+    },
+    {
+      "name": "Apagar filme criado",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/filmes/{{createdFilmeId}}"
+      }
+    },
+    {
+      "name": "Apagar genero criado",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/generos/{{createdGeneroId}}"
+      }
+    },
+    {
+      "name": "Logout JWT no cliente",
+      "auth": {
+        "type": "noauth"
+      },
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/logout"
+      }
+    }
+  ]
+}

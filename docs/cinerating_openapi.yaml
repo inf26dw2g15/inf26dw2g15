@@ -1,0 +1,1072 @@
+openapi: 3.0.3
+info:
+  title: CineRating API
+  version: 2.1.0
+  description: API REST para gestao de avaliacoes de filmes. A autenticacao inicial usa OAuth 2.0 com GitHub e as rotas protegidas usam JWT Bearer Token emitido pela propria API.
+servers:
+  - url: http://localhost:3000
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Estado
+  - name: Autenticacao
+  - name: Filmes
+  - name: Generos
+  - name: Avaliacoes
+  - name: Watchlist
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token emitido pela API.
+
+  parameters:
+    FilmeId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    GeneroId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    AvaliacaoId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    WatchlistFilmeId:
+      in: path
+      name: id_filme
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - erro
+      properties:
+        erro:
+          type: string
+          example: Recurso nao encontrado.
+        detalhes:
+          type: array
+          items:
+            type: object
+            properties:
+              campo:
+                type: string
+              mensagem:
+                type: string
+
+    MessageResponse:
+      type: object
+      required:
+        - mensagem
+      properties:
+        mensagem:
+          type: string
+          example: Operacao efetuada com sucesso.
+
+    Utilizador:
+      type: object
+      properties:
+        id_utilizador:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: aluno123
+        email:
+          type: string
+          format: email
+          example: aluno@example.com
+        github_id:
+          type: string
+          nullable: true
+          example: "1234567"
+        nome_github:
+          type: string
+          nullable: true
+          example: Aluno Exemplo
+        avatar_url:
+          type: string
+          nullable: true
+          format: uri
+          example: https://avatars.githubusercontent.com/u/123456?v=4
+        oauth_provider:
+          type: string
+          example: github
+
+    Genero:
+      type: object
+      properties:
+        id_genero:
+          type: integer
+          example: 1
+        nome_genero:
+          type: string
+          example: Ficcao Cientifica
+
+    GeneroComFilmes:
+      allOf:
+        - $ref: "#/components/schemas/Genero"
+        - type: object
+          properties:
+            filmes:
+              type: array
+              items:
+                $ref: "#/components/schemas/Filme"
+
+    Filme:
+      type: object
+      properties:
+        id_filme:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: Oppenheimer
+        ano_lancamento:
+          type: integer
+          example: 2023
+        duracao_minutos:
+          type: integer
+          nullable: true
+          example: 180
+        sinopse:
+          type: string
+          nullable: true
+          example: A historia do cientista que liderou o projecto da bomba atomica.
+        id_genero:
+          type: integer
+          nullable: true
+          example: 16
+        genero:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Genero"
+
+    FilmeComAvaliacoes:
+      allOf:
+        - $ref: "#/components/schemas/Filme"
+        - type: object
+          properties:
+            avaliacoes:
+              type: array
+              items:
+                $ref: "#/components/schemas/Avaliacao"
+
+    Avaliacao:
+      type: object
+      properties:
+        id_avaliacao:
+          type: integer
+          example: 1
+        id_filme:
+          type: integer
+          example: 1
+        id_utilizador:
+          type: integer
+          example: 1
+        nota:
+          type: integer
+          minimum: 0
+          maximum: 20
+          example: 18
+        comentario:
+          type: string
+          nullable: true
+          example: Excelente filme.
+        data_avaliacao:
+          type: string
+          format: date
+          example: "2026-04-30"
+        filme:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Filme"
+        utilizador:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Utilizador"
+
+    Watchlist:
+      type: object
+      description: Item de watchlist identificado pela chave composta id_utilizador + id_filme.
+      properties:
+        id_utilizador:
+          type: integer
+          example: 1
+        id_filme:
+          type: integer
+          example: 2
+        data_adicionado:
+          type: string
+          format: date-time
+          example: "2026-04-30T12:00:00.000Z"
+        visto:
+          type: boolean
+          example: false
+        filme:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Filme"
+
+    CreateFilmeRequest:
+      type: object
+      required:
+        - titulo
+        - ano_lancamento
+      properties:
+        titulo:
+          type: string
+          example: Novo Filme de Teste
+        ano_lancamento:
+          type: integer
+          minimum: 1888
+          example: 2026
+        duracao_minutos:
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 110
+        sinopse:
+          type: string
+          nullable: true
+          example: Filme criado para testar o endpoint.
+        id_genero:
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 1
+
+    UpdateFilmeRequest:
+      type: object
+      properties:
+        titulo:
+          type: string
+        ano_lancamento:
+          type: integer
+          minimum: 1888
+        duracao_minutos:
+          type: integer
+          nullable: true
+          minimum: 1
+        sinopse:
+          type: string
+          nullable: true
+        id_genero:
+          type: integer
+          nullable: true
+          minimum: 1
+
+    ReplaceFilmeRequest:
+      allOf:
+        - $ref: "#/components/schemas/UpdateFilmeRequest"
+        - type: object
+          required:
+            - titulo
+            - ano_lancamento
+            - duracao_minutos
+            - sinopse
+            - id_genero
+
+    CreateGeneroRequest:
+      type: object
+      required:
+        - nome_genero
+      properties:
+        nome_genero:
+          type: string
+          example: Cinema Experimental Novo
+
+    CreateAvaliacaoRequest:
+      type: object
+      required:
+        - id_filme
+        - nota
+      properties:
+        id_filme:
+          type: integer
+          minimum: 1
+          example: 1
+        nota:
+          type: integer
+          minimum: 0
+          maximum: 20
+          example: 18
+        comentario:
+          type: string
+          nullable: true
+          example: Excelente filme.
+
+    UpdateAvaliacaoRequest:
+      type: object
+      properties:
+        nota:
+          type: integer
+          minimum: 0
+          maximum: 20
+          example: 19
+        comentario:
+          type: string
+          nullable: true
+          example: Alteracao de teste.
+
+    ReplaceAvaliacaoRequest:
+      allOf:
+        - $ref: "#/components/schemas/UpdateAvaliacaoRequest"
+        - type: object
+          required:
+            - nota
+            - comentario
+
+    CreateWatchlistRequest:
+      type: object
+      required:
+        - id_filme
+      properties:
+        id_filme:
+          type: integer
+          minimum: 1
+          example: 2
+
+    UpdateWatchlistRequest:
+      type: object
+      required:
+        - visto
+      properties:
+        visto:
+          type: boolean
+          example: true
+
+    AuthSuccess:
+      type: object
+      properties:
+        mensagem:
+          type: string
+          example: Autenticacao com GitHub efetuada com sucesso.
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        utilizador:
+          $ref: "#/components/schemas/Utilizador"
+        instrucao:
+          type: string
+          example: "Copie o token e use-o no header Authorization: Bearer <token>."
+
+  responses:
+    BadRequest:
+      description: Pedido invalido.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Token ausente ou utilizador nao autenticado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Token invalido ou expirado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Recurso nao encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflito com o estado actual dos dados.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Erro interno do servidor.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+paths:
+  /:
+    get:
+      tags:
+        - Estado
+      summary: Verificar estado da API
+      security: []
+      responses:
+        "200":
+          description: API activa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/github:
+    get:
+      tags:
+        - Autenticacao
+      summary: Iniciar autenticacao OAuth 2.0 com GitHub
+      description: No browser redirecciona para o GitHub. Em clientes que peçam JSON, devolve authUrl.
+      security: []
+      responses:
+        "200":
+          description: URL de autorizacao para clientes API.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authUrl:
+                    type: string
+                    example: https://github.com/login/oauth/authorize?client_id=...
+        "302":
+          description: Redireccionamento para o GitHub.
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /auth/github/callback:
+    get:
+      tags:
+        - Autenticacao
+      summary: Callback OAuth 2.0 do GitHub
+      security: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Utilizador validado no GitHub e JWT interno emitido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /auth/falha:
+    get:
+      tags:
+        - Autenticacao
+      summary: Resposta de falha OAuth
+      security: []
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    get:
+      tags:
+        - Autenticacao
+      summary: Instruir logout JWT no cliente
+      security: []
+      responses:
+        "200":
+          description: Sessao local destruida, quando existir.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      tags:
+        - Autenticacao
+      summary: Ver dados do utilizador autenticado
+      responses:
+        "200":
+          description: Dados do utilizador autenticado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  utilizador:
+                    $ref: "#/components/schemas/Utilizador"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /filmes:
+    get:
+      tags:
+        - Filmes
+      summary: Listar filmes
+      responses:
+        "200":
+          description: Lista de filmes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Filme"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags:
+        - Filmes
+      summary: Criar filme
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFilmeRequest"
+      responses:
+        "201":
+          description: Filme criado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  filme:
+                    $ref: "#/components/schemas/Filme"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /filmes/{id}:
+    get:
+      tags:
+        - Filmes
+      summary: Obter filme por ID
+      parameters:
+        - $ref: "#/components/parameters/FilmeId"
+      responses:
+        "200":
+          description: Filme encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilmeComAvaliacoes"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Filmes
+      summary: Substituir filme
+      description: Exige uma representacao completa dos campos editaveis do filme. Para alterar apenas alguns campos, use PATCH.
+      parameters:
+        - $ref: "#/components/parameters/FilmeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceFilmeRequest"
+      responses:
+        "200":
+          description: Filme actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  filme:
+                    $ref: "#/components/schemas/Filme"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Filmes
+      summary: Actualizar parcialmente filme
+      parameters:
+        - $ref: "#/components/parameters/FilmeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFilmeRequest"
+      responses:
+        "200":
+          description: Filme actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  filme:
+                    $ref: "#/components/schemas/Filme"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Filmes
+      summary: Apagar filme
+      parameters:
+        - $ref: "#/components/parameters/FilmeId"
+      responses:
+        "200":
+          description: Filme apagado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /generos:
+    get:
+      tags:
+        - Generos
+      summary: Listar generos
+      responses:
+        "200":
+          description: Lista de generos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Genero"
+    post:
+      tags:
+        - Generos
+      summary: Criar genero
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGeneroRequest"
+      responses:
+        "201":
+          description: Genero criado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  genero:
+                    $ref: "#/components/schemas/Genero"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /generos/{id}:
+    get:
+      tags:
+        - Generos
+      summary: Obter genero por ID
+      parameters:
+        - $ref: "#/components/parameters/GeneroId"
+      responses:
+        "200":
+          description: Genero encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneroComFilmes"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Generos
+      summary: Actualizar genero
+      parameters:
+        - $ref: "#/components/parameters/GeneroId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGeneroRequest"
+      responses:
+        "200":
+          description: Genero actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  genero:
+                    $ref: "#/components/schemas/Genero"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    patch:
+      tags:
+        - Generos
+      summary: Actualizar parcialmente genero
+      parameters:
+        - $ref: "#/components/parameters/GeneroId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGeneroRequest"
+      responses:
+        "200":
+          description: Genero actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  genero:
+                    $ref: "#/components/schemas/Genero"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      tags:
+        - Generos
+      summary: Apagar genero
+      parameters:
+        - $ref: "#/components/parameters/GeneroId"
+      responses:
+        "200":
+          description: Genero apagado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /avaliacoes:
+    get:
+      tags:
+        - Avaliacoes
+      summary: Listar avaliacoes do utilizador autenticado
+      description: O id_utilizador usado no filtro vem do JWT; o cliente nao consegue escolher outro utilizador.
+      responses:
+        "200":
+          description: Lista de avaliacoes proprias.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Avaliacao"
+    post:
+      tags:
+        - Avaliacoes
+      summary: Criar avaliacao para o utilizador autenticado
+      description: A API ignora qualquer id_utilizador no body e usa sempre o id_utilizador do JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAvaliacaoRequest"
+      responses:
+        "201":
+          description: Avaliacao criada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  avaliacao:
+                    $ref: "#/components/schemas/Avaliacao"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /avaliacoes/{id}:
+    get:
+      tags:
+        - Avaliacoes
+      summary: Obter avaliacao propria por ID
+      parameters:
+        - $ref: "#/components/parameters/AvaliacaoId"
+      responses:
+        "200":
+          description: Avaliacao encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Avaliacao"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Avaliacoes
+      summary: Substituir avaliacao propria
+      description: Exige nota e comentario. O filme e o utilizador da avaliacao nao podem ser alterados neste endpoint.
+      parameters:
+        - $ref: "#/components/parameters/AvaliacaoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceAvaliacaoRequest"
+      responses:
+        "200":
+          description: Avaliacao actualizada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  avaliacao:
+                    $ref: "#/components/schemas/Avaliacao"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Avaliacoes
+      summary: Actualizar parcialmente avaliacao propria
+      parameters:
+        - $ref: "#/components/parameters/AvaliacaoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAvaliacaoRequest"
+      responses:
+        "200":
+          description: Avaliacao actualizada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  avaliacao:
+                    $ref: "#/components/schemas/Avaliacao"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Avaliacoes
+      summary: Apagar avaliacao propria
+      parameters:
+        - $ref: "#/components/parameters/AvaliacaoId"
+      responses:
+        "200":
+          description: Avaliacao apagada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /watchlist:
+    get:
+      tags:
+        - Watchlist
+      summary: Listar watchlist do utilizador autenticado
+      description: O id_utilizador usado no filtro vem do JWT; o cliente nao consegue consultar watchlists de terceiros.
+      responses:
+        "200":
+          description: Watchlist propria.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Watchlist"
+    post:
+      tags:
+        - Watchlist
+      summary: Adicionar filme a watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWatchlistRequest"
+      responses:
+        "201":
+          description: Filme adicionado a watchlist.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  item:
+                    $ref: "#/components/schemas/Watchlist"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /watchlist/{id_filme}:
+    get:
+      tags:
+        - Watchlist
+      summary: Obter item da propria watchlist
+      parameters:
+        - $ref: "#/components/parameters/WatchlistFilmeId"
+      responses:
+        "200":
+          description: Item encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Watchlist"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags:
+        - Watchlist
+      summary: Actualizar item da propria watchlist
+      parameters:
+        - $ref: "#/components/parameters/WatchlistFilmeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWatchlistRequest"
+      responses:
+        "200":
+          description: Item actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  item:
+                    $ref: "#/components/schemas/Watchlist"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags:
+        - Watchlist
+      summary: Actualizar parcialmente item da propria watchlist
+      parameters:
+        - $ref: "#/components/parameters/WatchlistFilmeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWatchlistRequest"
+      responses:
+        "200":
+          description: Item actualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensagem:
+                    type: string
+                  item:
+                    $ref: "#/components/schemas/Watchlist"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Watchlist
+      summary: Remover item da propria watchlist
+      parameters:
+        - $ref: "#/components/parameters/WatchlistFilmeId"
+      responses:
+        "200":
+          description: Item removido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"

@@ -1,0 +1,38 @@
+{
+  "name": "inf26dw2g15",
+  "version": "1.0.0",
+  "description": "Sistema de Avaliação de Filmes com API REST, MySQL, Docker e OAuth 2.0 via GitHub",
+  "homepage": "https://github.com/inf26dw2g15/inf26dw2g15#readme",
+  "bugs": {
+    "url": "https://github.com/inf26dw2g15/inf26dw2g15/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inf26dw2g15/inf26dw2g15.git"
+  },
+  "license": "ISC",
+  "author": "Grupo 15",
+  "type": "commonjs",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "check": "node scripts/check-js.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.22.3",
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
+    "sequelize": "^6.37.8",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

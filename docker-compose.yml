@@ -1,0 +1,44 @@
+services:
+  mysql:
+    image: danielpiresumaia/cinerating-mysql:latest
+    container_name: cinerating-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no ficheiro .env}
+      MYSQL_DATABASE: ${DB_NAME:-cinerating_db}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: danielpiresumaia/cinerating-api:latest
+    container_name: cinerating-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PORT: ${PORT:-3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      DB_HOST: mysql
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-cinerating_db}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no ficheiro .env}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no ficheiro .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      SESSION_SECRET: ${SESSION_SECRET:?Defina SESSION_SECRET no ficheiro .env}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-http://localhost:3000/auth/github/callback}
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:

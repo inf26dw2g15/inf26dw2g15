@@ -1,0 +1,5 @@
+FROM mysql:8
+
+ENV MYSQL_DATABASE=cinerating_db
+
+COPY init/01_schema_seed.sql /docker-entrypoint-initdb.d/
